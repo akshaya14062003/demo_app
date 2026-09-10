@@ -1,0 +1,7 @@
+- `[x]` Update `AppBar` and `Image` section with indicators and arrow button
+- `[x]` Update `Size` selector styling (Pink theme)
+- `[x]` Add Store/Service Info row ("Nearest Store", "VIP", etc.)
+- `[x]` Redesign Action Buttons (Blue "Go to cart" and Green "Buy Now")
+- `[x]` Add Comparison Buttons row ("View Similar", "Add to Compare")
+- `[x]` Implement "Similar To" section with a staggered grid of products
+- `[x]` Verify UI alignment and interactions

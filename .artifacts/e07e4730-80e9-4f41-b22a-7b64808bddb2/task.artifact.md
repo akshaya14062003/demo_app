@@ -1,0 +1,7 @@
+- [x] Implement Cart Details and App Bar Badge
+    - [x] Update `product_details.dart` to include size in cart
+    - [x] Update `cart_page.dart` to display size
+    - [x] Update `custom_appbar.dart` to show cart badge
+    - [x] Update `home_page.dart` navigation and refresh logic
+    - [x] Update `trending_product.dart` navigation and refresh logic
+- [x] Verify functionality
