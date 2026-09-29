@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:demo_app/services/%20auth_service.dart';
+import 'package:flutter/material.dart';
+import 'forgot_screen.dart';
 import 'get_started.dart';
 import 'create_an_account.dart';
 
@@ -12,10 +13,9 @@ class WelcomeBackScreen extends StatefulWidget {
       _WelcomeBackScreenState();
 }
 
-class _WelcomeBackScreenState
-    extends State<WelcomeBackScreen> {
-
+class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
   bool hidePassword = true;
+  bool isLoading = false;
 
   final TextEditingController usernameController =
   TextEditingController();
@@ -26,47 +26,41 @@ class _WelcomeBackScreenState
 
 
   Future<void> login() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Get saved email and password
-    final savedEmail = prefs.getString("email");
-    final savedPassword = prefs.getString("password");
-
-    // Get entered values
     final enteredEmail =
     usernameController.text.trim();
 
     final enteredPassword =
     passwordController.text.trim();
 
-    // Check empty fields
-    if (enteredEmail.isEmpty || enteredPassword.isEmpty) {
-      if (!mounted) return;
+    if (enteredEmail.isEmpty ||
+        enteredPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please enter email and password"),
-        ),
-      );
-      return;
-    }
-
-    // Check if account exists
-    if (savedEmail == null || savedPassword == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No account found. Please register first."),
+          content:
+          Text("Please enter email and password"),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    // Check email and password
-    if (enteredEmail == savedEmail && enteredPassword == savedPassword) {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await AuthService.login(
+        email: enteredEmail,
+        password: enteredPassword,
+      );
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login successful")),
+        const SnackBar(
+          content: Text("Login successful"),
+          backgroundColor: Colors.green,
+        ),
       );
 
       Navigator.pushReplacement(
@@ -75,14 +69,75 @@ class _WelcomeBackScreenState
           builder: (context) => const GetStarted(),
         ),
       );
-    } else {
+    } catch (e) {
       if (!mounted) return;
+
+      final errorMessage =
+      e.toString().replaceFirst(
+        'Exception: ',
+        '',
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Incorrect email or password"),
+        SnackBar(
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+
+  Future<void> loginWithGoogle() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await AuthService.loginWithGoogle();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Google login successful"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const GetStarted(),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      final errorMessage =
+      e.toString().replaceFirst(
+        'Exception: ',
+        '',
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -93,26 +148,20 @@ class _WelcomeBackScreenState
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 32),
-
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32,
+            ),
             child: Column(
               crossAxisAlignment:
               CrossAxisAlignment.start,
-
               children: [
-
-
                 const SizedBox(height: 15),
 
                 const Text(
@@ -126,40 +175,32 @@ class _WelcomeBackScreenState
 
                 const SizedBox(height: 45),
 
-                // =================================================
-                // USERNAME / EMAIL
-                // =================================================
+
 
                 TextField(
                   controller: usernameController,
-
+                  keyboardType:
+                  TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: "Username or Email",
-
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                       fontSize: 16,
                     ),
-
                     prefixIcon: const Icon(
                       Icons.person,
                       color: Colors.grey,
                     ),
-
                     filled: true,
-
                     fillColor:
                     const Color(0xFFF5F5F5),
-
                     contentPadding:
                     const EdgeInsets.symmetric(
                       vertical: 20,
                     ),
-
                     border: OutlineInputBorder(
                       borderRadius:
                       BorderRadius.circular(12),
-
                       borderSide:
                       const BorderSide(
                         color: Colors.grey,
@@ -170,28 +211,20 @@ class _WelcomeBackScreenState
 
                 const SizedBox(height: 38),
 
-                // =================================================
-                // PASSWORD
-                // =================================================
 
                 TextField(
                   controller: passwordController,
-
                   obscureText: hidePassword,
-
                   decoration: InputDecoration(
                     hintText: "Password",
-
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                       fontSize: 16,
                     ),
-
                     prefixIcon: const Icon(
                       Icons.lock,
                       color: Colors.grey,
                     ),
-
                     suffixIcon: IconButton(
                       onPressed: () {
                         setState(() {
@@ -199,30 +232,25 @@ class _WelcomeBackScreenState
                           !hidePassword;
                         });
                       },
-
                       icon: Icon(
                         hidePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-
+                            ? Icons
+                            .visibility_outlined
+                            : Icons
+                            .visibility_off_outlined,
                         color: Colors.grey,
                       ),
                     ),
-
                     filled: true,
-
                     fillColor:
                     const Color(0xFFF5F5F5),
-
                     contentPadding:
                     const EdgeInsets.symmetric(
                       vertical: 20,
                     ),
-
                     border: OutlineInputBorder(
                       borderRadius:
                       BorderRadius.circular(12),
-
                       borderSide:
                       const BorderSide(
                         color: Colors.grey,
@@ -233,60 +261,69 @@ class _WelcomeBackScreenState
 
                 const SizedBox(height: 10),
 
+
+
                 Align(
                   alignment:
                   Alignment.centerRight,
-
-                  child: InkWell(
+                  child: GestureDetector(
+                    behavior:
+                    HitTestBehavior.opaque,
                     onTap: () {
-
-                      Navigator.push(
-                        context,
+                      Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) =>
-                          const GetStarted(),
+                          const ForgotScreen(),
                         ),
                       );
-
                     },
-
-                    child: const Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        color:
-                        Color(0xFFFF3655),
-                        fontSize: 15,
+                    child: const Padding(
+                      padding:
+                      EdgeInsets.all(8.0),
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color:
+                          Color(0xFFFF3655),
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
                 ),
 
-
-
                 const SizedBox(height: 65),
 
-                SizedBox(
+                                SizedBox(
                   width: double.infinity,
                   height: 68,
-
                   child: ElevatedButton(
-                    onPressed: login,
-
+                    onPressed:
+                    isLoading ? null : login,
                     style:
                     ElevatedButton.styleFrom(
                       backgroundColor:
                       const Color(0xFFFF3655),
-
+                      disabledBackgroundColor:
+                      const Color(0xFFFFA0AF),
                       elevation: 0,
-
                       shape:
                       RoundedRectangleBorder(
                         borderRadius:
                         BorderRadius.circular(5),
                       ),
                     ),
-
-                    child: const Text(
+                    child: isLoading
+                        ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child:
+                      CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                        : const Text(
                       "Login",
                       style: TextStyle(
                         color: Colors.white,
@@ -297,8 +334,6 @@ class _WelcomeBackScreenState
                     ),
                   ),
                 ),
-
-
 
                 const SizedBox(height: 92),
 
@@ -319,14 +354,20 @@ class _WelcomeBackScreenState
                 Row(
                   mainAxisAlignment:
                   MainAxisAlignment.center,
-
                   children: [
 
-                    socialButton(
-                      image: 'assets/image5.png',
+                    GestureDetector(
+                      onTap: isLoading
+                          ? null
+                          : loginWithGoogle,
+                      child: socialButton(
+                        image:
+                        'assets/image5.png',
+                      ),
                     ),
 
                     const SizedBox(width: 12),
+
 
                     socialButton(
                       image: 'assets/image6.png',
@@ -334,31 +375,26 @@ class _WelcomeBackScreenState
 
                     const SizedBox(width: 12),
 
+                    // OTHER BUTTON
                     socialButton(
                       image: 'assets/image7.png',
                     ),
                   ],
                 ),
 
-
-
                 const SizedBox(height: 38),
+
 
                 Row(
                   mainAxisAlignment:
                   MainAxisAlignment.center,
-
                   children: [
-
                     const Text(
                       "Create An Account",
                     ),
-
                     const SizedBox(width: 5),
-
                     InkWell(
                       onTap: () {
-
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -366,9 +402,7 @@ class _WelcomeBackScreenState
                             const CreateAnAccount(),
                           ),
                         );
-
                       },
-
                       child: const Text(
                         "SignUp",
                         style: TextStyle(
@@ -392,23 +426,19 @@ class _WelcomeBackScreenState
   }
 
 
-
   Widget socialButton({
     required String image,
   }) {
     return Container(
       width: 70,
       height: 70,
-
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-
         border: Border.all(
           color: const Color(0xFFFF3655),
           width: 1.5,
         ),
       ),
-
       child: Center(
         child: Image.asset(
           image,

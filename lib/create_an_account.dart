@@ -1,6 +1,6 @@
+import 'package:demo_app/services/%20auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAnAccount extends StatefulWidget {
   const CreateAnAccount({super.key});
@@ -13,6 +13,7 @@ class CreateAnAccount extends StatefulWidget {
 class _CreateAnAccountState extends State<CreateAnAccount> {
   bool hidePassword = true;
   bool hideConfirmPassword = true;
+  bool isLoading = false;
 
   final TextEditingController emailController =
   TextEditingController();
@@ -23,7 +24,9 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
   final TextEditingController confirmPasswordController =
   TextEditingController();
 
-
+  // ============================================================
+  // REGISTER USER USING FIREBASE
+  // ============================================================
 
   Future<void> registerUser() async {
     String email = emailController.text.trim();
@@ -35,36 +38,71 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
     if (email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
-      Fluttertoast.showToast(msg: "Please fill all fields");
+      Fluttertoast.showToast(
+        msg: "Please fill all fields",
+      );
       return;
     }
 
-    // Check password
+    // Check password length
     if (password.length < 6) {
-      Fluttertoast.showToast(msg: "Password must be at least 6 characters");
+      Fluttertoast.showToast(
+        msg: "Password must be at least 6 characters",
+      );
       return;
     }
 
     // Check confirm password
     if (password != confirmPassword) {
-      Fluttertoast.showToast(msg: "Passwords do not match");
+      Fluttertoast.showToast(
+        msg: "Passwords do not match",
+      );
       return;
     }
 
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
 
 
-    final prefs = await SharedPreferences.getInstance();
+      await AuthService.register(
+        email: email,
+        password: password,
+      );
 
-    await prefs.setString("email", email);
-    await prefs.setString("password", password);
+      if (!mounted) return;
 
-    if (!mounted) return;
+      Fluttertoast.showToast(
+        msg: "Account created successfully",
+      );
 
-    Fluttertoast.showToast(msg: "Account created successfully");
+      // Go back to Login screen
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
 
-    // Go to Login Page
-    Navigator.pop(context);
+      String errorMessage =
+      e.toString().replaceFirst(
+        'Exception: ',
+        '',
+      );
+
+      Fluttertoast.showToast(
+        msg: errorMessage,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
+
+
+
   @override
   void dispose() {
     emailController.dispose();
@@ -73,6 +111,9 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
 
     super.dispose();
   }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,8 +122,9 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32,
+            ),
 
             child: Column(
               crossAxisAlignment:
@@ -91,6 +133,7 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
               children: [
 
                 const SizedBox(height: 15),
+
 
 
                 const Text(
@@ -138,12 +181,15 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
                       borderRadius:
                       BorderRadius.circular(12),
 
-                      borderSide: BorderSide.none,
+                      borderSide:
+                      BorderSide.none,
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 25),
+
+
 
                 TextField(
                   controller: passwordController,
@@ -194,12 +240,15 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
                       borderRadius:
                       BorderRadius.circular(12),
 
-                      borderSide: BorderSide.none,
+                      borderSide:
+                      BorderSide.none,
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 15),
+
+
 
                 TextField(
                   controller:
@@ -252,12 +301,15 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
                       borderRadius:
                       BorderRadius.circular(12),
 
-                      borderSide: BorderSide.none,
+                      borderSide:
+                      BorderSide.none,
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 15),
+
+
 
                 const Text(
                   "By clicking the Register button, "
@@ -272,17 +324,24 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
                 const SizedBox(height: 15),
 
 
+
                 SizedBox(
                   width: double.infinity,
                   height: 60,
 
                   child: ElevatedButton(
-                    onPressed: registerUser,
+                    onPressed:
+                    isLoading
+                        ? null
+                        : registerUser,
 
                     style:
                     ElevatedButton.styleFrom(
                       backgroundColor:
                       const Color(0xFFFF3655),
+
+                      disabledBackgroundColor:
+                      const Color(0xFFFFA0AF),
 
                       elevation: 0,
 
@@ -293,18 +352,32 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
                       ),
                     ),
 
-                    child: const Text(
+                    child: isLoading
+                        ? const SizedBox(
+                      width: 28,
+                      height: 28,
+
+                      child:
+                      CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                        : const Text(
                       "Register",
+
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                        FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 30),
+
 
 
                 Center(
@@ -315,10 +388,13 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
 
                     child: const Text(
                       "Already I have an Account",
+
                       style: TextStyle(
-                        color: Color(0xFFFF3655),
+                        color:
+                        Color(0xFFFF3655),
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                        FontWeight.bold,
                       ),
                     ),
                   ),
@@ -326,9 +402,12 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
 
                 const SizedBox(height: 70),
 
+
+
                 const Center(
                   child: Text(
                     "- OR Continue with -",
+
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 16,
@@ -338,9 +417,7 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
 
                 const SizedBox(height: 25),
 
-                // ==================================================
-                // SOCIAL BUTTONS
-                // ==================================================
+
 
                 Row(
                   mainAxisAlignment:
@@ -371,6 +448,7 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
                 const Center(
                   child: Text(
                     "Sign up",
+
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 17,
@@ -387,9 +465,7 @@ class _CreateAnAccountState extends State<CreateAnAccount> {
     );
   }
 
-  // ============================================================
-  // SOCIAL BUTTON
-  // ============================================================
+
 
   Widget socialButton({
     required String image,
